@@ -2,16 +2,38 @@
 
 Shows you which licenses your dependencies have.
 
+```sh
+$ dart run bin/dart_license_checker.dart -h          
+-t, --show-transitive-dependencies    Show transitive dependencies.
+-p, --pretty-print                    Pretty-print the results.
+-f, --format                          Specify output format.
+                                      [tsv, csv, json (default)]
+-h, --help                            print this help.
 ```
-┌───────────────────────────┐
-│ Package Name  License     │
-├───────────────────────────┤
-│     barbecue  Apache 2.0  │
-│         pana  BSD         │
-│         path  BSD         │
-│pubspec_parse  BSD         │
-│         tint  MIT         │
-└───────────────────────────┘
+
+```
+[
+  {
+    "name": "args",
+    "license": "BSD-3-Clause"
+  },
+  {
+    "name": "pana",
+    "license": "BSD-3-Clause"
+  },
+  {
+    "name": "path",
+    "license": "BSD-3-Clause"
+  },
+  {
+    "name": "pubspec_parse",
+    "license": "BSD-3-Clause"
+  },
+  {
+    "name": "tint",
+    "license": "MIT"
+  }
+]
 ```
 
 ## Install

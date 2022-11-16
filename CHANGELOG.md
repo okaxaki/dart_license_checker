@@ -1,3 +1,7 @@
+## 1.2.1-simplified
+- Change dart minimum requirement version from 2.17 to 2.15
+- Change output format to JSON/TSV/CSV
+
 ## 1.2.1
 
 - upgrade dependencies

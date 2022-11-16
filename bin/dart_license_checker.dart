@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:barbecue/barbecue.dart';
+import 'package:args/args.dart';
 import 'package:pana/pana.dart';
 import 'package:pana/src/license.dart';
 import 'package:path/path.dart';
@@ -39,8 +39,48 @@ const possibleLicenseFileNames = [
 ];
 
 void main(List<String> arguments) async {
+  final argParser = ArgParser();
+  argParser.addFlag(
+    'show-transitive-dependencies',
+    abbr: 't',
+    negatable: false,
+    help: 'Show transitive dependencies.',
+    defaultsTo: false,
+  );
+  argParser.addFlag(
+    'pretty-print',
+    abbr: 'p',
+    negatable: false,
+    help: 'Pretty-print the results.',
+    defaultsTo: false,
+  );
+  argParser.addOption(
+    'format',
+    abbr: 'f',
+    allowed: ['tsv', 'csv', 'json'],
+    help: 'Specify output format.',
+    defaultsTo: 'json',
+  );
+  argParser.addFlag(
+    'help',
+    abbr: 'h',
+    negatable: false,
+    help: 'print this help.',
+    defaultsTo: false,
+  );
+
+  final argResults = argParser.parse(arguments);
+
+  if (argResults['help']) {
+    print(argParser.usage);
+    exit(0);
+  }
+
   final showTransitiveDependencies =
-      arguments.contains('--show-transitive-dependencies');
+      argResults['show-transitive-dependencies'] as bool;
+  final prettyPrint = argResults['pretty-print'] as bool;
+  final outputFormat = argResults['format'];
+
   final pubspecFile = File('pubspec.yaml');
 
   if (!pubspecFile.existsSync()) {
@@ -63,7 +103,7 @@ void main(List<String> arguments) async {
 
   final packageConfig = json.decode(packageConfigFile.readAsStringSync());
 
-  final rows = <Row>[];
+  final res = [];
 
   for (final package in packageConfig['packages']) {
     final name = package['name'];
@@ -83,79 +123,46 @@ void main(List<String> arguments) async {
       }
     }
 
-    List<License>? license;
+    List<License>? licenses;
 
     for (final fileName in possibleLicenseFileNames) {
       final file = File(join(rootUri, fileName));
       if (file.existsSync()) {
         // ignore: invalid_use_of_visible_for_testing_member
-        license = await detectLicenseInFile(file, relativePath: file.path);
+        licenses = await detectLicenseInFile(file, relativePath: file.path);
         break;
       }
     }
 
-    if (license != null && license.isNotEmpty) {
-      rows.add(Row(cells: [
-        Cell(name, style: CellStyle(alignment: TextAlignment.TopRight)),
-        ...license.map((lic) => Cell(formatLicenseSpdx(lic)))
-      ]));
+    if (licenses != null && licenses.isNotEmpty) {
+      for (final license in licenses) {
+        res.add({'name': name, 'license': license.spdxIdentifier});
+      }
     } else {
-      rows.add(Row(cells: [
-        Cell(name, style: CellStyle(alignment: TextAlignment.TopRight)),
-        Cell('No license file'.grey()),
-      ]));
+      res.add({'name': name, 'license': 'No license file'});
     }
   }
-  print(
-    Table(
-      tableStyle: TableStyle(border: true),
-      header: TableSection(
-        rows: [
-          Row(
-            cells: [
-              Cell(
-                'Package Name  '.bold(),
-                style: CellStyle(alignment: TextAlignment.TopRight),
-              ),
-              Cell('License'.bold()),
-            ],
-            cellStyle: CellStyle(borderBottom: true),
-          ),
-        ],
-      ),
-      body: TableSection(
-        cellStyle: CellStyle(paddingRight: 2),
-        rows: rows,
-      ),
-    ).render(),
-  );
 
-  exit(0);
-}
-
-String formatLicenseName(LicenseFile license) {
-  if (license.name == 'unknown') {
-    return license.name.red();
-  } else if (copyleftOrProprietaryLicenses.contains(license.name)) {
-    return license.shortFormatted.red();
-  } else if (permissiveLicenses.contains(license.name)) {
-    return license.shortFormatted.green();
-  } else {
-    return license.shortFormatted.yellow();
-  }
-}
-
-String formatLicenseSpdx(License license) {
-  if (license.spdxIdentifier == 'unknown') {
-    return license.spdxIdentifier.red();
-  } else if (copyleftOrProprietaryLicenses
-      .any((str) => str.contains(license.spdxIdentifier))) {
-    return license.spdxIdentifier.red();
-  } else if (permissiveLicenses
-      .any((str) => str.contains(license.spdxIdentifier))) {
-    return license.spdxIdentifier.green();
-  } else {
-    return license.spdxIdentifier.yellow();
+  switch (outputFormat) {    
+    case 'tsv':
+      print('Package\tLicense');
+      for(final e in res) {
+        print('${e['name']}\t${e['license']}');
+      }
+      break;
+    case 'csv':
+      print('Package,License');
+      for(final e in res) {
+        print('"${e['name']}","${e['license']}"');
+      }
+      break;
+    case 'json':
+    default:
+      final encoder = prettyPrint
+          ? const JsonEncoder.withIndent('  ')
+          : const JsonEncoder();
+      print(encoder.convert(res));
+      break;
   }
 }
 

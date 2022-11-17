@@ -36,16 +36,10 @@ $ dart run bin/dart_license_checker.dart -h
 ]
 ```
 
-## Install
-
-`flutter pub global activate dart_license_checker`
-
 ## Use
 
 - Make sure you are in the main directory of your Flutter app or Dart program
-- Execute `dart_license_checker`
-
-If this doesn't work, you may need to set up your PATH (see https://dart.dev/tools/pub/cmd/pub-global#running-a-script-from-your-path)
+- Execute `dart run <path-to-repository>bin/dart_license_checker.dart`
 
 ## Showing transitive dependencies
 
@@ -53,4 +47,4 @@ By default, `dart_license_checker` only shows immediate dependencies (the packag
 
 If you want to analyze transitive dependencies too, you can use the `--show-transitive-dependencies` flag:
 
-`dart_license_checker --show-transitive-dependencies`
+`dart run <path-to-repository>bin/dart_license_checker.dart --show-transitive-dependencies`
